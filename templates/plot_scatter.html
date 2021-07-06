@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{Title}}</title>
+    <meta charset="utf-8">
+    <title>学生分数柱形显示</title>
+    <!-- 引入 echarts.js
+    <script src="https://cdn.staticfile.org/echarts/4.3.0/echarts.min.js"></script>-->
+    <script type="text/javascript"  src="{{ url_for('static',filename='echarts.min.js') }}"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+</head>
+<body>
+    <!-- 为ECharts准备一个具备大小（宽高）的Dom -->
+    <div id="title">{{Title}}</div>
+    <div id="main" style="width: 1400px;height:400px;"></div>
+    <div id="result">result</div>
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var myChart = echarts.init(document.getElementById('main'));
+
+        // 指定图表的配置项和数据
+        var stu_option = {
+                legend: {},
+                xAxis: {
+                    splitLine: {show: false},
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 50,
+                    interval: 10,
+                    splitLine: {show: true},
+                },
+                brush: {
+                    toolbox: ['lineX', 'keep', 'clear'],
+                },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        dataView: {show: true, readOnly: true},
+                        saveAsImage: {show: true},
+                    }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    showContent: false
+                },
+                 dataZoom:[{
+                    type:'slider',//slider表示有滑动块的，inside表示内置的
+                    show:true,
+                }],
+                series: [
+                    {symbolSize: 3, data:[], name:'chr1', type: 'scatter'},
+                    {symbolSize: 3, data:[], name:'chr2', type: 'scatter'},
+                    {symbolSize: 3, data:[], name:'chr3', type: 'scatter'},
+                    {symbolSize: 3, data:[], name:'chr4', type: 'scatter'},
+                ]
+        };
+
+<!--            myChart.on('brushSelected', renderBrushed);-->
+<!--            function renderBrushed(params) {-->
+<!--                var brushed = [];-->
+<!--                var brushComponent = params.batch[0];-->
+<!--                for (var sIdx = 0; sIdx < brushComponent.selected.length; sIdx++) {-->
+<!--                    var sum = 0-->
+<!--                    var rawIndices = brushComponent.selected[sIdx].dataIndex;-->
+<!--                    for (var i=0; i<rawIndices.length; i++){-->
+<!--                        var dataIndex = rawIndices[i];-->
+<!--                        sum+=stu_option.series[sIdx][dataIndex]-->
+<!--                    }-->
+<!--                    var average = sum/rawIndices.length-->
+<!--                    brushed.push('[Series ' + sIdx + '] ' + [rawIndices[0], rawIndices[rawIndices.length-1], average].join('-'));-->
+<!--                }-->
+
+<!--                document.getElementById("result").innerHTML=brushed.join('\n');-->
+<!--            }-->
+
+                            myChart.on('brushSelected', renderBrushed);
+                            function renderBrushed(params) {
+                                var brushed = [];
+                                var brushComponent = params.batch[0];
+                                for (var sIdx = 0; sIdx < brushComponent.selected.length; sIdx++) {
+                                    var sum = Number(0)
+                                    var rawIndices = brushComponent.selected[sIdx].dataIndex;
+                                    for (var i=0; i<rawIndices.length; i++){
+                                        var dataIndex = rawIndices[i];
+                                        sum += stu_option.series[sIdx].data[dataIndex][1]
+                                    }
+<!--                                    alert(stu_option.series[sIdx].data[0][1])-->
+                                    var average = sum/rawIndices.length
+                                    if (rawIndices.length != 0) {
+                                        var tmp_name = stu_option.series[sIdx].name
+                                        var tmp_idx = [rawIndices[0], rawIndices[rawIndices.length-1]].join('-')
+                                        var tmp_pos = [rawdataPos[sIdx][rawIndices[0]], rawdataPos[sIdx][rawIndices[rawIndices.length-1]]].join('-')
+                                        brushed.push(tmp_name + ' ' + tmp_idx + ' ' + tmp_pos + ' ' +average.toFixed(1));
+                                    }
+
+                                    document.getElementById("result").innerHTML=brushed.join('; ');
+                               }
+                            }
+
+        var rawdataPos = []
+        function get_stu_data() {
+                    $.ajax({
+                        url: "/stu/{{Title}}",
+                        success: function (data) {
+                            rawdataPos[0] = data.pos.chr1;
+                            rawdataPos[1] = data.pos.chr2;
+                            rawdataPos[2] = data.pos.chr3;
+                            rawdataPos[3] = data.pos.chr4;
+                            stu_option.series[0].data=data.chr.chr1;
+                            stu_option.series[1].data=data.chr.chr2;
+                            stu_option.series[2].data=data.chr.chr3;
+                            stu_option.series[3].data=data.chr.chr4;
+                            myChart.setOption(stu_option);
+                       }
+                  })
+        }
+        get_stu_data();
+
+    </script>
+
+</body>
+</html>
